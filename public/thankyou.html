@@ -51,7 +51,7 @@ and that an invoice was sent to their email.
 
         if (getCookie('user_cookie') != false) {
             var user_cookie = getCookie('user_cookie');
-            var name = user_cookie['fullname'];
+            var name = user_cookie['name'];
             var email = user_cookie['email'];
         } else {
             location.href= './login.html';

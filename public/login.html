@@ -126,7 +126,7 @@ On this page, usera are also given the choice to register for an account
                     var user_cookie = getCookie('user_cookie');
                     // Make the "login" button into a button with the user's name leading to the edit page
                     document.write(`
-                        <a class="nav-link mx-3" href="edit.html"><span class="glyphicon glyphicon-user"></span> ${user_cookie['fullname']}</a>
+                        <a class="nav-link mx-3" href="edit.html"><span class="glyphicon glyphicon-user"></span> ${user_cookie['name']}</a>
                     `)
                 } 
                 else {

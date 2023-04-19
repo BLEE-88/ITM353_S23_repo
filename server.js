@@ -10,7 +10,6 @@ const querystring = require('querystring');
 const nodemailer = require('nodemailer');
 
 /// GET SESSION ///
-// From Assignment 3 example code
 // To keep track of different users' data as they go from page to page
 const session = require('express-session');
 app.use(session({secret: "mySecretKey", resave: true, saveUninitialized: true}));
@@ -21,7 +20,6 @@ const {request} = require('http');
 app.use(cookieParser());
 
 /// PASSWORD ENCRYPTION ///
-// Require crypto library
 const crypto = require('crypto'); 
 
 // Create a function to encrypt text
@@ -43,10 +41,12 @@ function decrypt(encrypted) {
 var status = {};
 
 /// USER DATA ///
-// From Assignment 2
 // Get an entire file as an array of lines of user info data
 var fs = require('fs');
 var filename = './user_data.json';
+
+// Define a variable to specify where user identification numbers start
+let idNumber = 0;
 
 // If the filename exists
 if (fs.existsSync(filename)) {
@@ -61,9 +61,11 @@ if (fs.existsSync(filename)) {
         if (user_data[Object.keys(user_data)[i]].status == "loggedin") {
             status[Object.keys(user_data)[i]] = true;
         }
+
+        ///
+        user_data[Object.keys(user_data)[i]].customer_id = idNumber.toString().padStart(4, '0');
+        idNumber++;
     }
-    // The length of the status object shows how many current users there are
-    console.log(`Current users: ${Object.keys(status).length}`);  
 } 
 // If the file does not exist
 else {
@@ -71,6 +73,8 @@ else {
     user_data = {};
 }
 
+
+console.log(user_data);
 /// ROUTING /// 
 
 // Monitor all requests 
@@ -87,13 +91,10 @@ app.all('*', function (request, response, next) {
     next();
 });
 
-// Add the express middleware urlencoded so that the POST data can be decoded from the browser body
 app.use(express.urlencoded({extended: true}));
 
-// Loading the products.json file into variable products by searching for it in the root directory 
 var products = require(__dirname + '/products.json');
 
-// Responding to request for product_data.js with products.js
 app.get('/products_data.js', function (request, response) {
     response.type('.js');
     var products_str = `var products = ${JSON.stringify(products)};`;
@@ -125,14 +126,12 @@ app.post('/process_login', function(request, response) {
         if (user_data[email_input].password == encryptedPass) {
             // If the user's current status is "loggedout", change it to "loggedin" and add them to the status object
             if (user_data[email_input].status == "loggedout") {
-                // Update the user's status to loggedin
                 user_data[email_input].status = "loggedin";
-                // Add the user's email to status
                 status[email_input] = true;
             }
 
             // Store the user's email and name in the cookie in an object
-            var user_cookie = {"email": email_input, "fullname": user_data[email_input]['fullname']};
+            var user_cookie = {"email": email_input, "name": user_data[email_input]['name']};
             // Response with the user's cookie as a JSON string and set expiration to 15 minutes
             response.cookie('user_cookie', JSON.stringify(user_cookie), {maxAge: 900 * 1000});
 
@@ -156,7 +155,6 @@ app.post('/process_login', function(request, response) {
         request.query.loginError = 'Invalid email.';
     }
 
-    // Return the email that the user inputted appended to the query string
     request.query.email = email_input;
     let params = new URLSearchParams(request.query);
     response.redirect('/login.html?' + params.toString());
@@ -167,23 +165,23 @@ app.post('/process_register', function(request, response) {
     // Create a registration errors object and assume no errors
     var regErrors = {};
     // Get the request body input boxes 
-    var regFullname = request.body.fullname;
+    var regname = request.body.name;
     var regEmail = request.body.email.toLowerCase();
     var regPassword = request.body.password;
     var regConPass = request.body.confirm_password;
     
     /// FULL NAME VALIDATION ///
-    // Make sure that the fullname field is not blank
-    if (regFullname.length == 0) {
-        regErrors['fullname_Length'] = 'Full name field cannot be blank.'
+    // Make sure that the name field is not blank
+    if (regname.length == 0) {
+        regErrors['name_Length'] = 'Full name field cannot be blank.'
     }
-    // Make sure fullname field is between 2 and 30 characters
-    else if ((regFullname.length < 2) || (regFullname.length > 30)){
-        regErrors['fullname_Length'] = 'Full name must be between 2 and 30 characters.'
+    // Make sure name field is between 2 and 30 characters
+    else if ((regname.length < 2) || (regname.length > 30)){
+        regErrors['name_Length'] = 'Full name must be between 2 and 30 characters.'
     }
     // Make sure that the full name is made of letters and spaces
-    if ((/^[a-zA-Z\s]+$/.test(regFullname) == false) && (regFullname.length != 0)){
-        regErrors['fullname_Type'] = 'Full name must only contain letter characters.';
+    if ((/^[a-zA-Z\s]+$/.test(regname) == false) && (regname.length != 0)){
+        regErrors['name_Type'] = 'Full name must only contain letter characters.';
     } 
 
     /// EMAIL VALIDATION ///
@@ -223,17 +221,30 @@ app.post('/process_register', function(request, response) {
     /// RESPONSE ///
     // If there are no input errors, redirect the user back to products display
     if (Object.keys(regErrors).length == 0) {
+
+        // Find the current highest customer_id 
+        let maxId = 0;
+        for (const user in user_data) {
+            var customerId = parseInt(user_data[user].customer_id);
+            if (customerId > maxId) {
+                maxId = customerId;
+            }
+        }
+        // Assign the next available customer_id to the new user
+        var newCustomerId = (maxId + 1).toString().padStart(4, '0');
+
         // Create an object within the user_data object for the new user
-        user_data[regEmail] = {};
+        user_data[regEmail] = {
+            "name": regname,
+            "password": encrypt(regPassword),
+            "status": "loggedin",
+            "customer_id": newCustomerId
+        };
 
-        // Add the information the user inputted into their registration profile (their object)
-        user_data[regEmail].fullname = regFullname;
-        // Store passwords encrypted
-        user_data[regEmail].password = encrypt(regPassword);
-        user_data[regEmail].status = 'loggedin';
-
+        console.log(user_data);
+        
         // Store the user's email and name in the cookie in an object
-        var user_cookie = {"email": regEmail, "fullname": regFullname};
+        var user_cookie = {"email": regEmail, "name": regname};
         // Response with the user's cookie as a JSON string and set expiration to 15 minutes
         response.cookie('user_cookie', JSON.stringify(user_cookie), {maxAge: 900 * 1000});
 
@@ -262,23 +273,23 @@ app.post('/process_edit', function(request, response) {
     // Get the user's pre-edited email and name
     var oldEmail = cookie['email'];
 
-    var regFullname = request.body.fullname;
+    var regname = request.body.name;
     var regEmail = request.body.email.toLowerCase();
     var regPassword = request.body.password;
     var regConPass = request.body.confirm_password;
     
     /// FULL NAME VALIDATION ///
-    // Make sure that the fullname field is not blank
-    if (regFullname.length == 0) {
-        regErrors['fullname_Length'] = 'Full name field cannot be blank.'
+    // Make sure that the name field is not blank
+    if (regname.length == 0) {
+        regErrors['name_Length'] = 'Full name field cannot be blank.'
     }
-    // Make sure fullname field is between 2 and 30 characters
-    else if ((regFullname.length < 2) || (regFullname.length > 30)){
-        regErrors['fullname_Length'] = 'Full name must be between 2 and 30 characters.'
+    // Make sure name field is between 2 and 30 characters
+    else if ((regname.length < 2) || (regname.length > 30)){
+        regErrors['name_Length'] = 'Full name must be between 2 and 30 characters.'
     }
     // Make sure that the full name is made of letters and spaces
-    if ((/^[a-zA-Z\s]+$/.test(regFullname) == false) && (regFullname.length != 0)){
-        regErrors['fullname_Type'] = 'Full name must only contain letter characters.';
+    if ((/^[a-zA-Z\s]+$/.test(regname) == false) && (regname.length != 0)){
+        regErrors['name_Type'] = 'Full name must only contain letter characters.';
     } 
 
     /// EMAIL VALIDATION ///
@@ -314,25 +325,36 @@ app.post('/process_edit', function(request, response) {
     /// RESPONSE ///
     // If there are no input errors, redirect the user back to products display
     if (Object.keys(regErrors).length == 0) {
-        // Delete the user's old information
+        
+        // Find the user's current information
+        var currentUserInfo = user_data[oldEmail];
+
+        // Delete their old entry in user_data and status
         delete user_data[oldEmail];
+        delete status[oldEmail];
 
-        // Create an object within the user_data object for the new user
-        user_data[regEmail] = {};
-        // Add the information the user inputted into their registration profile (their object)
-        user_data[regEmail].fullname = regFullname;
-        // Store passwords encrypted
-        user_data[regEmail].password = encrypt(regPassword);
-        user_data[regEmail].status = 'loggedin';
+        if (currentUserInfo) {
+            // Get their current id
+            var currentUserId = currentUserInfo.customer_id;
 
-        // Add the user's email to status
-        status[regEmail] = true;
+            //Create a new user object with their new info, but assign them their old id
+            user_data[regEmail] = {
+                "name": regname,
+                "password": encrypt(regPassword),
+                "status": "loggedin",
+                "customer_id": currentUserId
+            };
+            // Add the user's email to status
+            status[regEmail] = true;
+
+            console.log(user_data);
+        }
 
         // Update the number of active users
         request.session.users = Object.keys(status).length;
 
         // Edit the user's email and name in the cookie
-        var user_cookie = {"email": regEmail, "fullname": regFullname};
+        var user_cookie = {"email": regEmail, "name": regname};
         // Response with the user's cookie as a JSON string and set expiration to 15 minutes
         response.cookie('user_cookie', JSON.stringify(user_cookie), {maxAge: 900 * 1000});
 

@@ -71,7 +71,7 @@ AND the user successfully logs in with an existing account or register for a new
 
         if (getCookie('user_cookie') != false) {
             var user_cookie = getCookie('user_cookie');
-            var name = user_cookie['fullname'];
+            var name = user_cookie['name'];
             var email = user_cookie['email'];
         } else {
             location.href= './login.html';
