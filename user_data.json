@@ -1,0 +1,17 @@
+{
+    "itm352@hawaii.edu": {
+        "fullname": "grader",
+        "password": "70a644a3d0627f4277d387af516c4b48",
+        "status": "loggedout"
+    },
+    "bctran219@gmail.com": {
+        "fullname": "Bao Tran",
+        "password": "8018f7ca3d5608997c016abd6546cf37",
+        "status": "loggedin"
+    },
+    "bvt@hawaii.edu": {
+        "fullname": "Vy Tran",
+        "password": "fe140fb0bc2d4b5c5503e8f109aa9a27",
+        "status": "loggedin"
+    }
+}
