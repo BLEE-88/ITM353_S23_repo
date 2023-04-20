@@ -62,7 +62,7 @@ if (fs.existsSync(filename)) {
             status[Object.keys(user_data)[i]] = true;
         }
 
-        ///
+        // Assign an ID to each user that has 4 digits
         user_data[Object.keys(user_data)[i]].customer_id = idNumber.toString().padStart(4, '0');
         idNumber++;
     }
@@ -73,8 +73,18 @@ else {
     user_data = {};
 }
 
-
 console.log(user_data);
+
+/// SALES RECORD ///
+var salesFile = './sales_record.json';
+if (fs.existsSync(salesFile)) {
+     var salesData = fs.readFileSync(salesFile, 'utf-8');
+     var sales_record = JSON.parse(salesData);
+}
+else {
+    sales_record = [];
+}
+
 /// ROUTING /// 
 
 // Monitor all requests 
@@ -94,6 +104,21 @@ app.all('*', function (request, response, next) {
 app.use(express.urlencoded({extended: true}));
 
 var products = require(__dirname + '/products.json');
+
+// Define a variable to specify where item numbers start
+let itemNumber = 0;
+
+for (let category in products) {
+    // Create a quantitySold key for each product
+    products[category].forEach((prod, i) => {prod.quantitySold = 0});
+
+    // Create an item_id for each product
+    products[category].forEach((prod, i) => {
+        prod.item_id = itemNumber.toString().padStart(4, '0');
+        itemNumber++;
+    });
+    
+}
 
 app.get('/products_data.js', function (request, response) {
     response.type('.js');
@@ -489,7 +514,6 @@ app.post('/complete_purchase', function (request, response) {
 
     // Change their status to "loggedout"
     user_data[email].status = "loggedout";
-
     
     subtotal = 0;
     var invoice_str = `Thank you for your order!
@@ -518,6 +542,9 @@ app.post('/complete_purchase', function (request, response) {
         }
     }
     
+    // Create an array to store the sales info
+    let salesInfo = {};
+
     // Print out invoice table in email
     for (let products_key in products) {
         for (let i = 0; i < products[products_key].length; i++) {
@@ -535,9 +562,27 @@ app.post('/complete_purchase', function (request, response) {
                     <td>$${extended_price}</td>
                 </tr>
                 `;
+
+                // Log the date that the product was sole
+                let date_sold = new Date();
+                // Add the necessary info to the salesInfo object 
+                    // Every product will have a separate salesInfo
+                    // So if a user buys 3 different types of products in 1 purchase, 3 salesInfo objects will be created
+                let salesInfo = {
+                    "item_id": products[products_key][i].item_id,
+                    "customer_id": user_data[email].customer_id,
+                    'date_sold': date_sold,
+                    'quantity': qty,
+                    'price': extended_price
+                }
+                // Push the salesInfo object to the sales_record 
+                sales_record.push(salesInfo);
             }
         }
     }
+
+    console.log(sales_record);
+
     // Sales tax
     var taxRate = (4.7/100);
     var taxAmount = subtotal * taxRate;

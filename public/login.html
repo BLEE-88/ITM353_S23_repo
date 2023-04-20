@@ -128,6 +128,11 @@ On this page, usera are also given the choice to register for an account
                     document.write(`
                         <a class="nav-link mx-3" href="edit.html"><span class="glyphicon glyphicon-user"></span> ${user_cookie['name']}</a>
                     `)
+                    if (user_cookie['name'] == 'Admin') {
+                        document.write(`
+                            <a class="nav-link mx-3" href="discount.html">Discount</a>
+                        `)
+                    }
                 } 
                 else {
                     document.write(`

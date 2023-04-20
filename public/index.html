@@ -95,6 +95,11 @@ This file is a home page where users will be directed to when they first enter t
                     document.write(`
                         <a class="nav-link mx-3" href="edit.html"><span class="glyphicon glyphicon-user"></span> ${user_cookie['fullname']}</a>
                     `)
+                    if (user_cookie['name'] == 'Admin') {
+                        document.write(`
+                            <a class="nav-link mx-3" href="discount.html">Discount</a>
+                        `)
+                    }
                 } 
                 else {
                     document.write(`

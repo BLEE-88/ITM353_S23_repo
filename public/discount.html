@@ -107,6 +107,11 @@ This file is an HTML page for admins to apply discounts
                     document.write(`
                         <a class="nav-link mx-3" href="edit.html"><span class="glyphicon glyphicon-user"></span> ${user_cookie['name']}</a>
                     `)
+                    if (user_cookie['name'] == 'Admin') {
+                        document.write(`
+                            <a class="nav-link mx-3" href="discount.html">Discount</a>
+                        `)
+                    }
                 } 
                 else {
                     document.write(`
@@ -129,69 +134,88 @@ This file is an HTML page for admins to apply discounts
         </nav>
     </div>
     <div class="container"> 
-        <h1 style="text-transform: uppercase;">Register</h1>
+        <h1 style="text-transform: uppercase;">Apply Discount</h1>
         <br>
-        <form action="/process_register" method="POST" name="register_form">
+        <form action="/process_discount" method="POST" name="discount_form">
             <table style="width: 80%; margin: auto;" class="tableContainer">
-                <tr class="form-group">
-                    <td style="width: 30%; text-align: right; padding-right: 10px;"><label>Full Name</label></td>
-                    <td style="width: 40%;"><input class="input" type="text" name="name" id="name" size="40" placeholder="i.e John Doe" autocomplete="off" maxlength="40"></td>
-                    <td style="width: 30%;"></td>
+                <tr>
+                    <td>Select a product(s):</td>
                 </tr>
-                <tr class="error_tr">
-                    <td style="width: 30%;"></td>
-                    <td style="width: 40%;" id="name_error"></td>
-                    <td style="width: 30%;"></td>
+                <tr>
+                    <td>
+                        <select multiple class="form-select" id="product_dropdown"></select>
+                    </td>  
                 </tr>
-
-                <tr class="form-group">
-                    <td style="width: 30%; text-align: right; padding-right: 10px; font-weight: bold;"><label>Email</label></td>
-                    <td style="width: 40%;"><input class="input" type="text" name="email" id="email" size="40" placeholder="i.e johndoe@gmail.com" autocomplete="off" maxlength="40"></td>
-                    <td style="width: 30%;"></td>
-                </tr>
-                <tr class="error_tr">
-                    <td style="width: 30%;"></td>
-                    <td style="width: 40%;" id="email_error"></td>
-                    <td style="width: 30%;"></td>
-                </tr>
-                
-                <tr class="form-group">
-                    <td style="width: 30%; text-align: right; padding-right: 10px;"><label>Password</label></td>
-                    <td style="width: 40%;"><input class="input" type="password" name="password" id="password" size="40" placeholder="Enter password" autocomplete="off" maxlength="40"></td>
-                    <td style="width: 30%; text-align: left; padding-left: 10px; font-size: 17px; line-height: 90%;"><input type="checkbox" onclick="showPassword()"> Show password</td>
-                </tr>
-                <tr class="error_tr">
-                    <td style="width: 30%;"></td>
-                    <td style="width: 40%;" id="password_error"></td>
-                    <td style="width: 30%;"></td>
-                </tr>
-
-                <tr class="form-group">
-                    <td style="width: 30%; text-align: right; padding-right: 10px;"><label>Confirm Password</label></td>
-                    <td style="width: 40%;"><input class="input" type="password" name="confirm_password" id="conform_password" size="40" placeholder="Re-enter password" autocomplete="off" maxlength="40"></td>
-                    <td style="width: 30%;"></td>
-                </tr>
-                <tr class="error_tr">
-                    <td style="width: 30%;"></td>
-                    <td style="width: 40%;" id="confirm_password_error"></td>
-                    <td style="width: 30%;"></td>
+                <tr>
+                    <td>
+                        <button type="button" class="inputButton"
+                            onclick="decrement()">--</button>
+                        <input type="number" autocomplete="off" placeholder="0" max="99" min="-99" name="discount" id="discount" class="inputBox" oninput="limitChar(this)">
+                        <button type="button" class="inputButton"
+                            onclick="increment()">+</button>
+                    </td>
                 </tr>
 
                 <tr style="height: 60px;">
                     <td colspan="3"></td>
                 </tr>
+
                 <tr style="height: 60px;">
                     <td colspan="3">
-                        <input class="sm-button" type="submit" value="Sign up" name="register" id="register">
+                        <input class="sm-button" type="submit" value="Apply" name="apply" id="apply">
                     </td>
-                </tr>
-                <tr>
-                    <!-- Go to register page -->
-                    <td colspan="3">Already have an account? <a href="/login.html" style="color: black; text-decoration: underline;">Login</a></td>
                 </tr>
             </table>
             <br>
         </form>
+        <script>
+            
+            var selectElement = document.getElementById("product_dropdown");
+            // Generate the dropdown by retrieving the products
+                // The dropdown value is the product's item_id
+                // But the text displayed on the screen is the product's name
+            Object.values(products).forEach(category => {
+                category.forEach(product => {
+                    var optionElement = document.createElement("option");
+                    optionElement.value = product.item_id;
+                    optionElement.textContent = product.name;
+                    selectElement.appendChild(optionElement);
+                });
+            });
+
+            // Increment the discount
+            function increment() {
+                var input = document.getElementById("discount");
+                if (input.value < 99) {
+                    input.value++;
+                }
+            }
+            // Decrement the discount
+            function decrement() {
+                var input = document.getElementById("discount");
+                if (input.value > -99) {
+                    input.value--;
+                }
+            }
+            // Limit the number of characters entered in the input box
+                // 3 characters for negative numbers
+                // 2 characters for positive numbers
+            function limitChar(input) {
+                var limit = 2;
+                let value = input.value.trim();
+                if (value.startsWith('-')) limit++;
+                if (value.length > limit) {
+                    value = value.slice(0, limit);
+                    input.value = value;
+                }
+                // May take out
+                // If user enters a character other than - and a number, the input box value is deleted
+                let userInput = input.value;
+                if (isNaN(userInput) || (userInput !== "-" && (Number(userInput) < -99 || Number(userInput) > 99))) {
+                    input.value = "";
+                }
+            }
+        </script>
         <br>
         <!-- EXPANDING SHOPPING CART -->
         <!-- Referenced from: https://www.w3schools.com/howto/howto_js_sidenav.asp -->
