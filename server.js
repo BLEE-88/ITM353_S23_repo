@@ -54,9 +54,10 @@ if (fs.existsSync(filename)) {
     var data = fs.readFileSync(filename, 'utf-8');
     // Parse the information into JSON format and store as user_data
     var user_data = JSON.parse(data);
-    
+
     // For every user that is already in the system
     for (let i = 0; i < Object.keys(user_data).length; i++) {
+        
         // If the user is "loggedin", add them to the status object
         if (user_data[Object.keys(user_data)[i]].status == "loggedin") {
             status[Object.keys(user_data)[i]] = true;
@@ -72,6 +73,7 @@ else {
     console.log(filename + " does not exist");
     user_data = {};
 }
+
 
 console.log(user_data);
 
@@ -542,7 +544,7 @@ app.post('/complete_purchase', function (request, response) {
         }
     }
     
-    // Create an array to store the sales info
+    // Create an object to store the sales info
     let salesInfo = {};
 
     // Print out invoice table in email
@@ -563,7 +565,7 @@ app.post('/complete_purchase', function (request, response) {
                 </tr>
                 `;
 
-                // Log the date that the product was sole
+                // Log the date that the product was sold
                 let date_sold = new Date();
                 // Add the necessary info to the salesInfo object 
                     // Every product will have a separate salesInfo
@@ -681,6 +683,103 @@ function notAPosInt(arrayElement, returnErrors=false) {
     return (returnErrors ? errors : (errors.length == 0));
 }
 
+app.post('/set_price', function(request, response) {
+    let item_id = Number(request.body.productDropdown);
+    let discount = request.body.discountInput;
+    let dynamic = request.body.dynamicPricing;
+
+    set_price(item_id, discount, dynamic);
+    response.redirect("/display_products.html?");
+})
+
+function set_price(item_id, discount, dynamic) {
+    /* To do: 
+        Add in * for all products
+        Try to test with selecting multiple products at a time
+        Add in test values for the time to test dynamic pricing
+    */
+
+    // Find the selected product within each category array
+    let selectedProduct = null;
+
+    // For each category in the products object
+    for (let category in products) {
+        // For each product in the category array
+        // If the item_id from the dropdown form matches with the one in the products object
+        selectedProduct = products[category].find(product => Number(product.item_id) === item_id);
+        if (selectedProduct) {
+            break;
+        }
+    }
+    
+    // If the selected product exists
+    if (selectedProduct) {
+        // If dynamic pricing was selected
+        if (dynamic) {
+            // Assume that the product's last sale date is null (meaning it has not been sold)
+            let lastSaleTime = null;
+            
+            // Get the current date
+            let currentDate = new Date();
+
+            // Loop through sales_record
+            for (let i = sales_record.length - 1; i >= 0; i--) {
+                // For every sale in the sales record
+                let sale = sales_record[i];
+                // If the item_id in the sales record matches the one from the admin's form submission
+                if (sale.item_id === item_id) {
+                    // Log the last sale time of the product
+                    lastSaleTime = new Date(sales.date_sold);
+                    break;
+                }
+            }
+
+            // If the last sale time exists (meaning the product was sold before)
+            if (lastSaleTime) {
+                // Calculate the number of hrs it has been since the last sale
+                let hoursSinceLastSale = Math.floor((currentDate - lastSaleTime) / (1000 * 60 * 60));
+                
+                // Apply the dynamic discount table
+                if (hoursSinceLastSale >= 96) {
+                    calculatedDiscount = 95;
+                } else if (hoursSinceLastSale >= 72) {
+                    calculatedDiscount = 60;
+                } else if (hoursSinceLastSale >= 48) {
+                    calculatedDiscount = 30;
+                } else if (hoursSinceLastSale >= 24) {
+                    calculatedDiscount = 10;
+                } else {
+                    discount = 0;
+                }
+            }
+            // If there has been no sales history for the selected product
+            else {
+                discount = 0;
+            }
+        } 
+        // If dynamic pricing is not selected, validate the entered discount amount
+        else {
+            if (discount >= -99 && discount <= 99) {
+                // Update the product's price with the custom discount
+                selectedProduct.price *= (1 - discount / 100);
+            } else {
+                console.log("Invalid discount amount.");
+            }
+        }
+        
+        for (let category in products) {
+            let index = products[category].findIndex(product => Number(product.item_id) === item_id);
+            if (index !== -1) {
+                products[category][index].price = selectedProduct.price;
+                console.log(products[category][index]);
+                break;
+            }
+        }
+    } else {
+        console.log("Selected product does not exist.");
+    }
+}
+  
 // Route all other GET requests to files and images in public 
 app.use(express.static(__dirname + '/public'));
 // Start server

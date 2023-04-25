@@ -22,6 +22,8 @@ This file is an HTML page for admins to apply discounts
 
     <!-- Link to products_style.css -->
     <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet" href="discount_style.css">
     
     <!-- Importing Google Fonts -->
     <link href='https://fonts.googleapis.com/css?family=Jost&family=Actor&family=Alef' rel='stylesheet'>
@@ -136,23 +138,33 @@ This file is an HTML page for admins to apply discounts
     <div class="container"> 
         <h1 style="text-transform: uppercase;">Apply Discount</h1>
         <br>
-        <form action="/process_discount" method="POST" name="discount_form">
-            <table style="width: 80%; margin: auto;" class="tableContainer">
+        <form action="/set_price" method="POST" name="discount_form" class="discount_form">
+            <table style="width: 80%; margin: auto;" id="discountTable">
                 <tr>
-                    <td>Select a product(s):</td>
-                </tr>
-                <tr>
+                    <td style="text-align: right;">Select a product:</td>
                     <td>
-                        <select multiple class="form-select" id="product_dropdown"></select>
+                        <select class="form-select" id="productDropdown" style="width: 250px;" name="productDropdown">
+                            <option value="*">All products</option>
+                        </select>
                     </td>  
                 </tr>
                 <tr>
+                    <td style="text-align: right;">Set a discount:</td>
                     <td>
                         <button type="button" class="inputButton"
-                            onclick="decrement()">--</button>
-                        <input type="number" autocomplete="off" placeholder="0" max="99" min="-99" name="discount" id="discount" class="inputBox" oninput="limitChar(this)">
+                            onclick="decrement()" id="decrementButton">--</button>
+                        <input type="number" autocomplete="off" placeholder="0" max="99" min="-99" name="discountInput" id="discountInput" class="inputBox" oninput="limitChar(this)">
                         <button type="button" class="inputButton"
-                            onclick="increment()">+</button>
+                            onclick="increment()" id="incrementButton">+</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="text-align: right;">Apply dynamic pricing:</td>
+                    <td>
+                        <label class="switch">
+                            <input type="checkbox" id="dynamicPricing" name="dynamicPricing" onchange="removeDiscount(this)">
+                            <span class="slider round"></span>
+                        </label>
                     </td>
                 </tr>
 
@@ -170,7 +182,7 @@ This file is an HTML page for admins to apply discounts
         </form>
         <script>
             
-            var selectElement = document.getElementById("product_dropdown");
+            var selectElement = document.getElementById("productDropdown");
             // Generate the dropdown by retrieving the products
                 // The dropdown value is the product's item_id
                 // But the text displayed on the screen is the product's name
@@ -185,14 +197,14 @@ This file is an HTML page for admins to apply discounts
 
             // Increment the discount
             function increment() {
-                var input = document.getElementById("discount");
+                var input = document.getElementById("discountInput");
                 if (input.value < 99) {
                     input.value++;
                 }
             }
             // Decrement the discount
             function decrement() {
-                var input = document.getElementById("discount");
+                var input = document.getElementById("discountInput");
                 if (input.value > -99) {
                     input.value--;
                 }
@@ -213,6 +225,21 @@ This file is an HTML page for admins to apply discounts
                 let userInput = input.value;
                 if (isNaN(userInput) || (userInput !== "-" && (Number(userInput) < -99 || Number(userInput) > 99))) {
                     input.value = "";
+                }
+            }
+
+            // If dynamic pricing is selected, make it so users aren't able to set a custom discount
+            function removeDiscount(checkbox) {
+                if (checkbox.checked) {
+                    discountInput.disabled = true;
+                    decrementButton.disabled = true;
+                    incrementButton.disabled = true;
+                    discountInput.value = 0;
+                }
+                else {
+                    discountInput.disabled = false;
+                    decrementButton.disabled = false;
+                    incrementButton.disabled = false;
                 }
             }
         </script>

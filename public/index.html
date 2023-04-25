@@ -93,7 +93,7 @@ This file is a home page where users will be directed to when they first enter t
                     var user_cookie = getCookie('user_cookie');
                     // Make the "login" button into a button with the user's name leading to the edit page
                     document.write(`
-                        <a class="nav-link mx-3" href="edit.html"><span class="glyphicon glyphicon-user"></span> ${user_cookie['fullname']}</a>
+                        <a class="nav-link mx-3" href="edit.html"><span class="glyphicon glyphicon-user"></span> ${user_cookie['name']}</a>
                     `)
                     if (user_cookie['name'] == 'Admin') {
                         document.write(`
@@ -130,7 +130,7 @@ This file is a home page where users will be directed to when they first enter t
                 // Turn the string of key value pairs into an object to be parsed
                 var user_cookie = getCookie('user_cookie');
                 // Make the "login" button into a button with the user's name leading to the edit page
-                document.write(`Welcome ${user_cookie['fullname']}!`)
+                document.write(`Welcome ${user_cookie['name']}!`)
             } 
             else {
                 document.write(`Welcome!`)
