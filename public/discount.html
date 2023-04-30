@@ -231,12 +231,14 @@ This file is an HTML page for admins to apply discounts
             // If dynamic pricing is selected, make it so users aren't able to set a custom discount
             function removeDiscount(checkbox) {
                 if (checkbox.checked) {
+                    checkbox.value = true;
                     discountInput.disabled = true;
                     decrementButton.disabled = true;
                     incrementButton.disabled = true;
                     discountInput.value = 0;
                 }
                 else {
+                    checkbox.value = false;
                     discountInput.disabled = false;
                     decrementButton.disabled = false;
                     incrementButton.disabled = false;

@@ -502,7 +502,7 @@ app.get('/checkout', function (request, response) {
 })
 
 // Retrieved from Assignment 3 Code Example
-app.post('/complete_purchase', function (request, response) {
+app.post('/complete_purchase', function (request, response) { 
     // Get the user's cookie and parse it 
     var cookie = JSON.parse(request.cookies['user_cookie']);
     // Get the user's email
@@ -571,8 +571,8 @@ app.post('/complete_purchase', function (request, response) {
                     // Every product will have a separate salesInfo
                     // So if a user buys 3 different types of products in 1 purchase, 3 salesInfo objects will be created
                 let salesInfo = {
-                    "item_id": products[products_key][i].item_id,
-                    "customer_id": user_data[email].customer_id,
+                    'item_id': products[products_key][i].item_id,
+                    'customer_id': user_data[email].customer_id,
                     'date_sold': date_sold,
                     'quantity': qty,
                     'price': extended_price
@@ -683,11 +683,66 @@ function notAPosInt(arrayElement, returnErrors=false) {
     return (returnErrors ? errors : (errors.length == 0));
 }
 
-app.post('/set_price', function(request, response) {
-    let item_id = Number(request.body.productDropdown);
-    let discount = request.body.discountInput;
-    let dynamic = request.body.dynamicPricing;
+/// Testing dynamic pricing               
+let today = new Date();
 
+// Subtract 24 hours in milliseconds (24 * 60 * 60 * 1000) to get yesterday's date
+let yesterday = new Date(today - 86400000);
+
+// Subtract 48 hours in milliseconds (48 * 60 * 60 * 1000) to get 2 days ago
+let twoDaysAgo = new Date(today - 172800000);
+
+// Subtract 72 hours in milliseconds (72 * 60 * 60 * 1000) to get 3 days ago
+let threeDaysAgo = new Date(today - 259200000);
+
+// Subtract 96 hours in milliseconds (96 * 60 * 60 * 1000) to get 4 days ago
+let fourDaysAgo = new Date(today - 345600000);
+
+var yesterday_record = {
+    "item_id": products['Shoes'][0].item_id, // HunterxHunter
+    "customer_id": "0001",
+    "date_sold": yesterday, 
+    "quantity": 1, 
+    "price": 1 * products['Shoes'][0].price
+}
+
+var twoDaysAgo_record = {
+    "item_id": products['Shoes'][1].item_id, //FMAB
+    "customer_id": "0002",
+    "date_sold": twoDaysAgo, 
+    "quantity": 1, 
+    "price": 1 * products['Shoes'][1].price
+}
+
+var threeDaysAgo_record = {
+    "item_id": products['Shoes'][2].item_id, //JJK
+    "customer_id": "0002",
+    "date_sold": threeDaysAgo, 
+    "quantity": 1, 
+    "price": 1 * products['Shoes'][2].price
+}
+
+var fourDaysAgo_record = {
+    "item_id": products['Shoes'][3].item_id, //Fairy Tail
+    "customer_id": "0002",
+    "date_sold": fourDaysAgo, 
+    "quantity": 1, 
+    "price": 1 * products['Shoes'][3].price
+}
+
+sales_record.push(yesterday_record);
+sales_record.push(twoDaysAgo_record);
+sales_record.push(threeDaysAgo_record );
+sales_record.push(fourDaysAgo_record);
+
+console.log(`sales_record: `)
+console.log(sales_record)
+
+app.post('/set_price', function(request, response) {
+    var item_id = Number(request.body.productDropdown);
+    var discount = request.body.discountInput;
+    var dynamic = request.body.dynamicPricing;
+        
     set_price(item_id, discount, dynamic);
     response.redirect("/display_products.html?");
 })
@@ -708,6 +763,7 @@ function set_price(item_id, discount, dynamic) {
         // If the item_id from the dropdown form matches with the one in the products object
         selectedProduct = products[category].find(product => Number(product.item_id) === item_id);
         if (selectedProduct) {
+            console.log(`Selected product (${selectedProduct['name']}) with item id (${item_id}) exists within the products file`)
             break;
         }
     }
@@ -716,20 +772,25 @@ function set_price(item_id, discount, dynamic) {
     if (selectedProduct) {
         // If dynamic pricing was selected
         if (dynamic) {
+            console.log(`Dynamic pricing was selected.`)
+
             // Assume that the product's last sale date is null (meaning it has not been sold)
             let lastSaleTime = null;
             
             // Get the current date
             let currentDate = new Date();
+            console.log(`The current date is: ${currentDate}`);
 
             // Loop through sales_record
             for (let i = sales_record.length - 1; i >= 0; i--) {
                 // For every sale in the sales record
                 let sale = sales_record[i];
+
                 // If the item_id in the sales record matches the one from the admin's form submission
-                if (sale.item_id === item_id) {
+                if (Number(sale.item_id) === item_id) {
                     // Log the last sale time of the product
-                    lastSaleTime = new Date(sales.date_sold);
+                    lastSaleTime = new Date(sale.date_sold);
+                    console.log(`The last time that ${selectedProduct['name']} was sold is: ${lastSaleTime}.`);
                     break;
                 }
             }
@@ -738,27 +799,37 @@ function set_price(item_id, discount, dynamic) {
             if (lastSaleTime) {
                 // Calculate the number of hrs it has been since the last sale
                 let hoursSinceLastSale = Math.floor((currentDate - lastSaleTime) / (1000 * 60 * 60));
+
+                console.log(`It has been ${hoursSinceLastSale} since ${selectedProduct['name']} has been sold.`)
                 
                 // Apply the dynamic discount table
                 if (hoursSinceLastSale >= 96) {
                     calculatedDiscount = 95;
+                    console.log(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
                 } else if (hoursSinceLastSale >= 72) {
                     calculatedDiscount = 60;
+                    console.log(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
                 } else if (hoursSinceLastSale >= 48) {
                     calculatedDiscount = 30;
+                    console.log(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
                 } else if (hoursSinceLastSale >= 24) {
                     calculatedDiscount = 10;
+                    console.log(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
                 } else {
                     discount = 0;
+                    console.log(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']} because it has not been >= 24 hrs since it was last sold.`);
                 }
             }
             // If there has been no sales history for the selected product
             else {
+                console.log(`${selectedProduct['name']} has not been sold.`)
                 discount = 0;
             }
+            selectedProduct.price *= (1 - calculatedDiscount / 100);
         } 
         // If dynamic pricing is not selected, validate the entered discount amount
         else {
+            console.log(`Dynamic pricing was not selected.`)
             if (discount >= -99 && discount <= 99) {
                 // Update the product's price with the custom discount
                 selectedProduct.price *= (1 - discount / 100);
@@ -771,7 +842,6 @@ function set_price(item_id, discount, dynamic) {
             let index = products[category].findIndex(product => Number(product.item_id) === item_id);
             if (index !== -1) {
                 products[category][index].price = selectedProduct.price;
-                console.log(products[category][index]);
                 break;
             }
         }
