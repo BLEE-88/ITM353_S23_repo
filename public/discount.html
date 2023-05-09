@@ -31,6 +31,7 @@ This file is an HTML page for admins to apply discounts
     <!-- Get the product information -->
     <script type="text/javascript" src="./products_data.js"></script>
     <script type="text/javascript" src="./functions.js"></script>
+    <script type="text/javascript" src="./sales_record.js"></script>
     
     <script>
         let params = (new URL(document.location)).searchParams;
@@ -135,10 +136,17 @@ This file is an HTML page for admins to apply discounts
             </div>   
         </nav>
     </div>
-    <div class="container"> 
+    <div class="container" style="min-height: 550px;"> 
         <h1 style="text-transform: uppercase;">Apply Discount</h1>
+
+        <h3 id="fixProdErr"></h3>
+        <p id="productsErr" style="color: red; font-size: 12px;"></p>
+
+        <h3 id="fixRecordErr"></h3>
+        <p id="salesErr" style="color: red; font-size: 12px;"></p>
+
         <br>
-        <form action="/set_price" method="POST" name="discount_form" class="discount_form">
+        <form action="/set_price" method="POST" name="discount_form" class="discount_form" id="discount_form">
             <table style="width: 80%; margin: auto;" id="discountTable">
                 <tr>
                     <td style="text-align: right;">Select a product:</td>
@@ -181,7 +189,6 @@ This file is an HTML page for admins to apply discounts
             <br>
         </form>
         <script>
-            
             var selectElement = document.getElementById("productDropdown");
             // Generate the dropdown by retrieving the products
                 // The dropdown value is the product's item_id
@@ -244,6 +251,105 @@ This file is an HTML page for admins to apply discounts
                     incrementButton.disabled = false;
                 }
             }
+
+            // To validate the products array
+            function validateProducts(products, returnErrors=false) {
+                const maxProducts = 100; // Put a max number of products 
+                const err = []; // Assume that there are no errors at first
+        
+                if (!products || Object.keys(products).length === 0) {
+                    err.push("Products object is empty.");
+                }
+
+                // Check to see if the number of products exceed maxProducts
+                let totalProducts = 0;
+                for (let category in products) {
+                    if (products.hasOwnProperty(category)) { // If the products object has category arrays
+                        totalProducts += products[category].length; // Calculate totalProducts
+
+                        if (products[category].length == 0) { // If a category array is empty
+                            err.push("This category is empty.");
+                        }
+                    }
+                }
+                if (totalProducts > 100) {
+                    err.push("Maximum number of products allowed is 100.");
+                }
+                
+                // Validate each product's price, quantity, and item_id
+                for (let category in products) {
+                    if (products.hasOwnProperty(category)) {
+                        for (let i in products[category]) {
+                            const product = products[category][i];
+                            const price = parseFloat(product.price);
+                            const inventory = parseInt(product.inventory);
+                            const item_id = Number(product.item_id);
+
+                            if (isNaN(price) || price < 0) {
+                                err.push(`Invalid price for product with item_id ${item_id} in category "${category}".`);
+                            }
+                            if (isNaN(inventory) || inventory < 0) {
+                                err.push(`Invalid inventory amount for product with item_id ${item_id} in category "${category}".`);
+                            }
+                            if (isNaN(item_id) || item_id < 0) {
+                                err.push(`Invalid item_id for product at index ${i} in category "${category}".`);
+                            }
+                        }
+                    }
+                }
+                return (returnErrors ? err : (err.length == 0));
+            }
+
+            err = validateProducts(products, true);
+            if (err.length > 0) {
+                document.getElementById("fixProdErr").innerHTML = "Fix all errors in the products object.";
+                document.getElementById("discount_form").style.display = "none";
+            }
+            document.getElementById("productsErr").innerHTML = err.join('<br>');
+
+            function validateSalesRecord(sales_record, products, returnErrors=false) {
+                const err = []; // Assume that there are no errors at first
+                
+                if (sales_record.length == 0) {
+                    err.push("Sales record is empty.");
+                }
+
+                sales_record.forEach(sale => {
+                    // If a sale is missing data
+                    if (!sale.hasOwnProperty('item_id') || !sale.hasOwnProperty('customer_id') || !sale.hasOwnProperty('date_sold') || !sale.hasOwnProperty('quantity')) {
+                        err.push("A sale within the sales record is missing data.");
+                    }
+                    
+                    // Find the product in the products object that matches the sale.item_id
+                    let product = null;
+                    Object.values(products).forEach(categoryArray => {
+                        const matchingProduct = categoryArray.find(product => Number(product.item_id) === Number(sale.item_id));
+                        if (matchingProduct) {
+                            product = matchingProduct;
+                        }
+                    });
+
+                    // If the item_id in the sales_record does not exist in products 
+                    if (!product) {
+                        err.push(`A sale within the sales record has an invalid/nonexistent item_id.`)
+                    } else {
+                        if (isNaN(sale.quantity) || sale.quantity < 1) {
+                            err.push(`Invalid quantity in sales record for product with item_id ${sale.item_id}.`)
+                        }
+                        if (isNaN(sale.price) || sale.price <= 0 || sale.price != (product.price * sale.quantity))  {
+                            err.push(`Invalid price in sales record for product with item_id ${sale.item_id}.`);
+                        }
+                    }
+                });
+                return (returnErrors ? err : (err.length == 0));
+            }
+
+            err = validateSalesRecord(sales_record, products, true);
+            if (err.length > 0) {
+                document.getElementById("fixRecordErr").innerHTML = "Fix all errors in the sales record array.";
+                document.getElementById("discount_form").style.display = "none";
+            }
+            document.getElementById("salesErr").innerHTML = err.join('<br>');
         </script>
         <br>
         <!-- EXPANDING SHOPPING CART -->

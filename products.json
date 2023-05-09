@@ -2,7 +2,7 @@
     "Shoes": [
         {
             "name": "HunterxHunter",
-            "price": 200,
+            "price": -200,
             "image": "./images/HxHFront.jpg",
             "alt": "HunterxHunter shoes image",
             "inventory": 15

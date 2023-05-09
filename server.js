@@ -125,6 +125,12 @@ app.get('/products_data.js', function (request, response) {
     response.send(products_str);
 });
 
+app.get('/sales_record.js', function (request, response) {
+    response.type('.js');
+    var sales_record_str = `var sales_record = ${JSON.stringify(sales_record)};`;
+    response.send(sales_record_str);
+})
+
 app.post("/get_products_data", function (request, response) {
     response.json(products);
 });
@@ -802,7 +808,7 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
                             calculatedDiscount = 10;
                             console.log(`A ${calculatedDiscount}% discount has been applied to ${product['name']}.`);
                         } else {
-                            discount = 0;
+                            calculatedDiscount = 0;
                             console.log(`A ${calculatedDiscount}% discount has been applied to ${product['name']} because it has not been >= 24 hrs since it was last sold.`);
                         }
                     }
@@ -811,14 +817,21 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
                         console.log(`${product['name']} has not been sold.`)
                         calculatedDiscount = 0;
                     }
-                    product.price *= (1 - calculatedDiscount / 100);
-                    product.price = Number(product.price.toFixed(2));
+                    let discountedPrice = product.price * (1 - calculatedDiscount / 100);
+                    
+                    console.log(`${product['name']}'s price went from $${product.price} to $${discountedPrice}`);
+                    product.price = Number(discountedPrice.toFixed(2));
                 }
                 else {
                     console.log(`Dynamic pricing was not selected.`)
                     if (discount >= -99 && discount <= 99) {
+                        console.log(`The discount amount is: ${discount}%`);
+
                         // Update the product's price with the custom discount
-                        product.price = Number((product.price *= (1 - discount / 100)).toFixed(2));
+                        let discountedPrice = product.price * (1 - discount / 100);
+
+                        console.log(`${product['name']}'s price went from $${product.price} to $${discountedPrice}`);
+                        product.price = Number(discountedPrice.toFixed(2));
                     } else {
                         console.log("Invalid discount amount.");
                     }
@@ -827,7 +840,9 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
         }
     }
     // Check if the selected product a singular product
-    else {
+    else if (!NaN(item_id)) {
+        console.log(`A singular product was selected.`);
+
         // Find the selected product within each category array
         let selectedProduct = null;
 
@@ -901,8 +916,10 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
                     console.log(`${selectedProduct['name']} has not been sold.`)
                     calculatedDiscount = 0;
                 }
-                selectedProduct.price *= (1 - calculatedDiscount / 100);
-                selectedProduct.price = Number(selectedProduct.price.toFixed(2));
+                let discountedPrice = selectedProduct.price * (1 - calculatedDiscount / 100);
+                console.log(`${selectedProduct['name']}'s price went from $${selectedProduct.price} to $${discountedPrice}`);
+
+                selectedProduct.price = Number(discountedPrice.toFixed(2));
             } 
             // If dynamic pricing is not selected, validate the entered discount amount
             else {
@@ -910,11 +927,11 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
                 if (discount >= -99 && discount <= 99) {
                     console.log(`The discount amount is: ${discount}%`);
 
-                    
-                    console.log(`${selectedProduct['name']}'s price went from $${selectedProduct.price} to $${selectedProduct.price *= Number((1 - discount / 100).toFixed(2))}`);
-
                     // Update the product's price with the custom discount
-                    selectedProduct.price = Number((selectedProduct.price *= (1 - discount / 100)).toFixed(2));
+                    let discountedPrice = selectedProduct.price * (1 - discount / 100);
+                    
+                    console.log(`${selectedProduct['name']}'s price went from $${selectedProduct.price} to $${discountedPrice}`);
+                    selectedProduct.price = Number(discountedPrice.toFixed(2));
                 } else {
                     console.log("Invalid discount amount.");
                 }
@@ -932,6 +949,9 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
             console.log("Selected product does not exist.");
         }
     } 
+    else {
+        console.log(`Invalid item_id input`)
+    }
 }
   
 // Route all other GET requests to files and images in public 

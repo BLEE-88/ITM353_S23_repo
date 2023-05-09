@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="test-results"></div>
+</body>
+<script>
+    const test_cases = [
+        {
+            "description": "Invalid input, single product, fixed discount",
+            "input": {
+                "item_id": "0001",
+                "products": {
+                    "Category1": [
+                        {"item_id": "0001", name: "Test Product", "price": 10, "image": "test.jpg", "alt": "test", "inventory": 10 }
+                    ],
+                    "Category2": [
+
+                    ]
+                },
+                "sales_record": [],
+                "discount": 20,
+                "dynamic": false,
+            },
+            "expected_output": [
+                { 
+                    "item_id": "0001", 
+                    "name": "Test Product", 
+                    "price": 8, 
+                    "image": "test.jpg", 
+                    "alt": "test", 
+                    "inventory": 10 }
+            ],
+            // Additional test cases
+        }
+    ];
+
+    const testResultsDiv = document.getElementById("test-results");
+
+    test_cases.forEach(({ description, input, expected_output}) => {
+        let testResult = document.createElement("p"); // Create a <p> element to hold results of each test case
+        testResult.textContent = `Running test case: ${description}`;
+
+        console.log(`Running test cases: ${description}`);
+        // Start a try-catch block to catch errors that might occur during the execution of a test case
+        try { 
+            // Call for the set_price function
+            // Uses the input parameters for the current test case
+            // Assigns them to updated_products
+            const updated_products = set_price(
+                input.item_id,
+                input.products,
+                input.sales_record,
+                input.discount,
+                input.dynamic
+            );
+            // Check to see if output from set_price matches with expected_output
+            if (JSON.stringify(updated_products) === JSON.stringify(expected_output)) {
+                testResult.style.color = "green";
+                testResult.textContent += " - Test passed!";
+                console.log(`Test passed!`)
+            } else {
+                testResult.style.color = "red";
+                testResult.textContent += ` - Test failed: Expected ${JSON.stringify(expected_output)}, but got ${JSON.stringify(updated_products)}.`;
+                console.log(`Test failed: Expected ${JSON.stringify(expected_output)}, but got ${JSON.stringify(updated_products)}.`)
+            }
+        } catch (error) {
+            testResult.style.color = "red";
+            testResult.textContent += ` - Test failed: ${error.message}.`;
+      
+            console.error("Test failed:", error.message);
+        }
+        testResultsDiv.appendChild(testResult);
+    })
+
+    function set_price(item_id, products, sales_record, discount, dynamic) {
+        // Create a constant productCategories, which is an array of all of the keys in the products object
+        // So an array of all of the categories
+        const productCategories = Object.keys(products);
+
+        // Create an empty discountedProducts array
+        const discountedProducts = [];
+
+        // For every category in the array of categories
+        for (const category of productCategories) {
+            // Define the products in each category array in the products object
+            const productsInCategory = products[category];
+            // Get the number of products in each category
+            const numProductsInCategory = productsInCategory.length;
+
+            // Loop through each category
+            for (let i = 0; i < numProductsInCategory; i++) {
+                const product = productsInCategory[i];
+
+                // Check if the current product being iterated over is the one we're updating the price for
+                if (product.item_id === item_id) {
+                    // Create a newPrice var and set it to the current price of the product
+                    let newPrice = product.price;
+
+                    // If dynamic is true
+                    if (dynamic) {
+                        // Assume that the product's last sale date is null (meaning it has not been sold)
+                        let lastSaleTime = null; 
+                            
+                        let currentDate = new Date(); // Get the current date
+
+                        // Look for a matching sales record for the product in the sales_record array
+                        const salesForProduct = sales_record.filter(sale => sale.item_id === item_id);
+
+                        if (salesForProduct) {
+                            lastSaleTime = new Date(sale.date_sold);
+                            break;
+                        }
+
+                        if (lastSaleTime) {
+                            let hoursSinceLastSale = Math.floor((currentDate - lastSaleTime) / (1000 * 60 * 60));
+                            if (hoursSinceLastSale >= 96) {
+                                calculatedDiscount = 95;
+                            } else if (hoursSinceLastSale >= 72) {
+                                calculatedDiscount = 60;
+                            } else if (hoursSinceLastSale >= 48) {
+                                calculatedDiscount = 30;
+                            } else if (hoursSinceLastSale >= 24) {
+                                calculatedDiscount = 10;
+                            } else {
+                                calculatedDiscount = 0;
+                            }
+                        }
+                        else {
+                            calculatedDiscount = 0;
+                        }
+                        let discountedPrice = product.price * (1 - calculatedDiscount / 100);
+                        newPrice = Number(discountedPrice.toFixed(2));
+                    }
+                    // Stopped here. Make changes from set_price
+
+                    // Apply fixed discount if applicable
+                    if (discount) {
+                    newPrice *= (100 - discount) / 100;
+                    }
+
+                    // Round new price to two decimal places
+                    newPrice = Math.round(newPrice * 100) / 100;
+
+                    // Update product price
+                    product.price = newPrice;
+                    discountedProducts.push(product);
+                } else {
+                    // For non-updated products, just add them to the list as-is
+                    discountedProducts.push(product);
+                }
+            }
+        }
+
+        return discountedProducts;
+        }
+
+    
+    /*function set_price(item_id, products, sales_record, discount, dynamic, returnErrors=false) {
+        const log = [];
+
+        // Check if the selected product is *
+        if (item_id === "*") {
+            log.push(`Selected product is * - applying discount to all products`);
+
+            for (let category in products) { // For each category in the products object
+                for (let i = 0; i < products[category].length; i++) {
+                    let product = products[category][i];
+                    let calculatedDiscount = 0;
+
+                    if (dynamic) { // If dynamic pricing was selected
+                        log.push(`Dynamic pricing was selected`);
+
+                        // Assume that the product's last sale date is null (meaning it has not been sold)
+                        let lastSaleTime = null; 
+                        
+                        let currentDate = new Date(); // Get the current date
+                        log.push(`The current date is: ${currentDate}`);
+
+                        for (let i = sales_record.length - 1; i >= 0; i--) { // Loop through sales_record
+                            let sale = sales_record[i]; // For every sale in the sales record
+
+                            // If the item_id in the sales record matches the one from the admin's form submission
+                            if (sale['item_id'] == product['item_id']) {
+                                lastSaleTime = new Date(sale.date_sold); // Log the last sale time of the product
+                                log.push(`The last time that ${product['name']} was sold is: ${lastSaleTime}.`);
+                                break;
+                            }
+                        }
+
+                        // If the last sale time exists (meaning the product was sold before)
+                        if (lastSaleTime) {
+                            // Calculate the number of hrs it has been since the last sale
+                            let hoursSinceLastSale = Math.floor((currentDate - lastSaleTime) / (1000 * 60 * 60));
+
+                            log.push(`It has been ${hoursSinceLastSale} hrs since ${product['name']} has been sold.`)
+                            
+                            // Apply the dynamic discount table
+                            if (hoursSinceLastSale >= 96) {
+                                calculatedDiscount = 95;
+                                log.push(`A ${calculatedDiscount}% discount has been applied to ${product['name']}.`);
+                            } else if (hoursSinceLastSale >= 72) {
+                                calculatedDiscount = 60;
+                                log.push(`A ${calculatedDiscount}% discount has been applied to ${product['name']}.`);
+                            } else if (hoursSinceLastSale >= 48) {
+                                calculatedDiscount = 30;
+                                log.push(`A ${calculatedDiscount}% discount has been applied to ${product['name']}.`);
+                            } else if (hoursSinceLastSale >= 24) {
+                                calculatedDiscount = 10;
+                                log.push(`A ${calculatedDiscount}% discount has been applied to ${product['name']}.`);
+                            } else {
+                                discount = 0;
+                                log.push(`A ${calculatedDiscount}% discount has been applied to ${product['name']} because it has not been >= 24 hrs since it was last sold.`);
+                            }
+                        }
+                        // If there has been no sales history for the selected product
+                        else {
+                            log.push(`${product['name']} has not been sold.`)
+                            calculatedDiscount = 0;
+                        }
+                        let discountedPrice = product.price * (1 - calculatedDiscount / 100);
+
+                        log.push(`${product['name']}'s price went from $${product.price} to $${discountedPrice}`);
+                        product.price = Number(discountedPrice.toFixed(2));
+                    }
+                    else {
+                        log.push(`Dynamic pricing was not selected.`)
+                        if (discount >= -99 && discount <= 99) {
+                            log.push(`The discount amount is: ${discount}%`)
+
+                            // Update the product's price with the custom discount
+                            let discountedPrice = product.price * product.price * (1 - discount / 100);
+
+                            log.push(`${product['name']}'s price went from $${product.price} to $${product.price *= Number((1 - discount / 100).toFixed(2))}`);
+                            product.price = Number(discountedPrice.toFixed(2));
+                        } else {
+                            log.push("Invalid discount amount input.");
+                        }
+                    }
+                }
+            }
+        }
+        // Check if the selected product a singular product
+        else if (!isNaN(item_id)) {
+            log.push(`A singular product was selected.`);
+
+            // Find the selected product within each category array
+            let selectedProduct = null;
+
+            for (let category in products) { // For each category in the products object
+                // For each product in the category array
+                // If the item_id from the dropdown form matches with the one in the products object
+                
+                selectedProduct = products[category].find(product => Number(product.item_id) === Number(item_id));
+                if (selectedProduct) {
+                    log.push(`Selected product (${selectedProduct['name']}) with item id (${item_id}) exists within the products file`)
+                    break;
+                }
+            }
+            
+            // If the selected product exists
+            if (selectedProduct) {
+                // If dynamic pricing was selected
+                if (dynamic) {
+                    log.push(`Dynamic pricing was selected`);
+
+                    // Assume that the product's last sale date is null (meaning it has not been sold)
+                    let lastSaleTime = null;
+                    
+                    // Get the current date
+                    let currentDate = new Date();
+                    log.push(`The current date is: ${currentDate}`);
+
+                    // Loop through sales_record
+                    for (let i = sales_record.length - 1; i >= 0; i--) {
+                        // For every sale in the sales record
+                        let sale = sales_record[i];
+
+                        // If the item_id in the sales record matches the one from the admin's form submission
+                        if (Number(sale.item_id) === Number(item_id)) {
+                            // Log the last sale time of the product
+                            lastSaleTime = new Date(sale.date_sold);
+                            log.push(`The last time that ${selectedProduct['name']} was sold is: ${lastSaleTime}.`);
+                            break;
+                        }
+                    }
+                    
+                    let calculatedDiscount = 0;
+
+                    // If the last sale time exists (meaning the product was sold before)
+                    if (lastSaleTime) {
+                        // Calculate the number of hrs it has been since the last sale
+                        let hoursSinceLastSale = Math.floor((currentDate - lastSaleTime) / (1000 * 60 * 60));
+                        
+                        log.push(`It has been ${hoursSinceLastSale} since ${selectedProduct['name']} has been sold.`)
+                        
+                        // Apply the dynamic discount table
+                        if (hoursSinceLastSale >= 96) {
+                            calculatedDiscount = 95;
+                            log.push(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
+                        } else if (hoursSinceLastSale >= 72) {
+                            calculatedDiscount = 60;
+                            log.push(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
+                        } else if (hoursSinceLastSale >= 48) {
+                            calculatedDiscount = 30;
+                            log.push(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
+                        } else if (hoursSinceLastSale >= 24) {
+                            calculatedDiscount = 10;
+                            log.push(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
+                        } else {
+                            discount = 0;
+                            log.push(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']} because it has not been >= 24 hrs since it was last sold.`);
+                        }
+                    }
+                    // If there has been no sales history for the selected product
+                    else {
+                        log.push(`${selectedProduct['name']} has not been sold.`)
+                        calculatedDiscount = 0;
+                    }
+                    let discountedPrice =  selectedProduct.price * (1 - calculatedDiscount / 100);
+                    log.push(`${selectedProduct['name']}'s price went from $${selectedProduct.price} to $${discountedPrice}`);
+
+                    selectedProduct.price = Number(discountedPrice.toFixed(2));
+                } 
+                // If dynamic pricing is not selected, validate the entered discount amount
+                else {
+                    log.push(`Dynamic pricing was not selected.`)
+                    if (discount >= -99 && discount <= 99) {
+                        log.push(`The discount amount is: ${discount}%`);
+
+                        // Update the product's price with the custom discount
+                        let discountedPrice = selectedProduct.price * (1 - discount / 100);
+
+                        log.push(`${selectedProduct['name']}'s price went from $${selectedProduct.price} to $${selectedProduct.price *= Number((1 - discount / 100).toFixed(2))}`);
+                        selectedProduct.price = Number(discountedPrice.toFixed(2));
+                    } else {
+                        log.push("Invalid discount amount input.");
+                    }
+                }
+                
+                for (let category in products) {
+                    let index = products[category].findIndex(product => Number(product.item_id) === item_id);
+                    if (index !== -1) {
+                        products[category][index].price = selectedProduct.price;
+                        break;
+                    }
+                }
+            } 
+            else {
+                log.push("Selected product does not exist.");
+            }
+        }
+        else {
+            log.push("Invalid item_id input")
+        }
+        return (returnErrors ? log : (log.length == 0));
+    }*/
+</script>
+</html>
