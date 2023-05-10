@@ -197,7 +197,7 @@ This file is an HTML page for admins to apply discounts
                 category.forEach(product => {
                     var optionElement = document.createElement("option");
                     optionElement.value = product.item_id;
-                    optionElement.textContent = product.name;
+                    optionElement.textContent = `${product.name} - ${product.item_id}`;
                     selectElement.appendChild(optionElement);
                 });
             });
@@ -336,7 +336,7 @@ This file is an HTML page for admins to apply discounts
                         if (isNaN(sale.quantity) || sale.quantity < 1) {
                             err.push(`Invalid quantity in sales record for product with item_id ${sale.item_id}.`)
                         }
-                        if (isNaN(sale.price) || sale.price <= 0 || sale.price != (product.price * sale.quantity))  {
+                        if (isNaN(sale.price) || sale.price <= 0)  {
                             err.push(`Invalid price in sales record for product with item_id ${sale.item_id}.`);
                         }
                     }

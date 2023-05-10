@@ -701,12 +701,15 @@ let threeDaysAgo = new Date(today - 259200000);
 // Subtract 96 hours in milliseconds (96 * 60 * 60 * 1000) to get 4 days ago
 let fourDaysAgo = new Date(today - 345600000);
 
+// Make change to products price because after a discount is applied, the data in sales record changes
+// So make the price into a set var first, put it in sales record
+
 var yesterday_record = {
     "item_id": products['Shoes'][0].item_id, // HunterxHunter
     "customer_id": "0001",
     "date_sold": yesterday, 
     "quantity": 1, 
-    "price": 1 * products['Shoes'][0].price
+    "price": 200
 }
 
 var twoDaysAgo_record = {
@@ -714,7 +717,7 @@ var twoDaysAgo_record = {
     "customer_id": "0002",
     "date_sold": twoDaysAgo, 
     "quantity": 1, 
-    "price": 1 * products['Shoes'][1].price
+    "price": 350
 }
 
 var threeDaysAgo_record = {
@@ -722,7 +725,7 @@ var threeDaysAgo_record = {
     "customer_id": "0002",
     "date_sold": threeDaysAgo, 
     "quantity": 1, 
-    "price": 1 * products['Shoes'][2].price
+    "price": 350
 }
 
 var fourDaysAgo_record = {
@@ -730,7 +733,7 @@ var fourDaysAgo_record = {
     "customer_id": "0002",
     "date_sold": fourDaysAgo, 
     "quantity": 1, 
-    "price": 1 * products['Shoes'][3].price
+    "price": 350
 }
 
 sales_record.push(yesterday_record);
@@ -783,9 +786,10 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
                         if (sale['item_id'] == product['item_id']) {
                             lastSaleTime = new Date(sale.date_sold); // Log the last sale time of the product
                             console.log(`The last time that ${product['name']} was sold is: ${lastSaleTime}.`);
-                            break;
                         }
                     }
+
+                    
 
                     // If the last sale time exists (meaning the product was sold before)
                     if (lastSaleTime) {
@@ -816,11 +820,14 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
                     else {
                         console.log(`${product['name']} has not been sold.`)
                         calculatedDiscount = 0;
-                    }
+                    }              
                     let discountedPrice = product.price * (1 - calculatedDiscount / 100);
-                    
-                    console.log(`${product['name']}'s price went from $${product.price} to $${discountedPrice}`);
+                    if (discountedPrice < 0.01) {
+                        discountedPrice = 0.01;
+                    }
                     product.price = Number(discountedPrice.toFixed(2));
+
+                    console.log(`${product['name']}'s price went from $${product.price} to $${discountedPrice}`);
                 }
                 else {
                     console.log(`Dynamic pricing was not selected.`)
@@ -829,6 +836,9 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
 
                         // Update the product's price with the custom discount
                         let discountedPrice = product.price * (1 - discount / 100);
+                        if (discountedPrice < 0.01) {
+                            discountedPrice = 0.01;
+                        }
 
                         console.log(`${product['name']}'s price went from $${product.price} to $${discountedPrice}`);
                         product.price = Number(discountedPrice.toFixed(2));
@@ -840,7 +850,7 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
         }
     }
     // Check if the selected product a singular product
-    else if (!NaN(item_id)) {
+    else if (!isNaN(item_id)) {
         console.log(`A singular product was selected.`);
 
         // Find the selected product within each category array
@@ -880,7 +890,6 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
                         // Log the last sale time of the product
                         lastSaleTime = new Date(sale.date_sold);
                         console.log(`The last time that ${selectedProduct['name']} was sold is: ${lastSaleTime}.`);
-                        break;
                     }
                 }
                 
@@ -917,6 +926,9 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
                     calculatedDiscount = 0;
                 }
                 let discountedPrice = selectedProduct.price * (1 - calculatedDiscount / 100);
+                if (discountedPrice < 0.01) {
+                    discountedPrice = 0.01;
+                }
                 console.log(`${selectedProduct['name']}'s price went from $${selectedProduct.price} to $${discountedPrice}`);
 
                 selectedProduct.price = Number(discountedPrice.toFixed(2));
@@ -929,6 +941,9 @@ function set_price(item_id, products, sales_record, discount, dynamic) {
 
                     // Update the product's price with the custom discount
                     let discountedPrice = selectedProduct.price * (1 - discount / 100);
+                    if (discountedPrice < 0.01) {
+                        discountedPrice = 0.01;
+                    }
                     
                     console.log(`${selectedProduct['name']}'s price went from $${selectedProduct.price} to $${discountedPrice}`);
                     selectedProduct.price = Number(discountedPrice.toFixed(2));

@@ -97,7 +97,7 @@
                 "price": 1 * products['Category1'][0]['price']
             },
             {
-                "item_id": products['Category1'][1]['item_id'],
+                "item_id": "0001",
                 "customer_id": "0002",
                 "date_sold": yesterday,
                 "quantity": 2,
@@ -195,7 +195,6 @@
         -->
         <br>
         <br>
-        <input type="submit">
     </form>
     <br>
 
@@ -321,7 +320,6 @@
                                 if (sale['item_id'] == product['item_id']) {
                                     lastSaleTime = new Date(sale.date_sold); // Log the last sale time of the product
                                     log.push(`The last time that ${product['name']} was sold is: ${lastSaleTime}.`);
-                                    break;
                                 }
                             }
 
@@ -335,20 +333,16 @@
                                 // Apply the dynamic discount table
                                 if (hoursSinceLastSale >= 96) {
                                     calculatedDiscount = 95;
-                                    log.push(`A ${calculatedDiscount}% discount has been applied to ${product['name']}.`);
                                 } else if (hoursSinceLastSale >= 72) {
                                     calculatedDiscount = 60;
-                                    log.push(`A ${calculatedDiscount}% discount has been applied to ${product['name']}.`);
                                 } else if (hoursSinceLastSale >= 48) {
                                     calculatedDiscount = 30;
-                                    log.push(`A ${calculatedDiscount}% discount has been applied to ${product['name']}.`);
                                 } else if (hoursSinceLastSale >= 24) {
                                     calculatedDiscount = 10;
-                                    log.push(`A ${calculatedDiscount}% discount has been applied to ${product['name']}.`);
                                 } else {
                                     calculatedDiscount = 0;
-                                    log.push(`A ${calculatedDiscount}% discount has been applied to ${product['name']} because it has not been >= 24 hrs since it was last sold.`);
                                 }
+                                log.push(`A ${calculatedDiscount}% discount has been applied to ${product['name']} because it has not been >= 24 hrs since it was last sold.`);
                             }
                             // If there has been no sales history for the selected product
                             else {
@@ -366,7 +360,7 @@
                                 log.push(`The discount amount is: ${discount}%`)
 
                                 // Update the product's price with the custom discount
-                                let discountedPrice = product.price * product.price * (1 - discount / 100);
+                                let discountedPrice = product.price * (1 - discount / 100);
 
                                 log.push(`${product['name']}'s price went from $${product.price} to $${product.price *= Number((1 - discount / 100).toFixed(2))}`);
                                 product.price = Number(discountedPrice.toFixed(2));
@@ -390,7 +384,7 @@
                     
                     selectedProduct = products[category].find(product => Number(product.item_id) === Number(item_id));
                     if (selectedProduct) {
-                        log.push(`Selected product (${selectedProduct['name']}) with item id (${item_id}) exists within the products file`)
+                        log.push(`Selected product (${selectedProduct['name']}) with item id (${item_id}) exists within the products file`);
                         break;
                     }
                 }
@@ -418,7 +412,6 @@
                                 // Log the last sale time of the product
                                 lastSaleTime = new Date(sale.date_sold);
                                 log.push(`The last time that ${selectedProduct['name']} was sold is: ${lastSaleTime}.`);
-                                break;
                             }
                         }
                         
@@ -434,20 +427,16 @@
                             // Apply the dynamic discount table
                             if (hoursSinceLastSale >= 96) {
                                 calculatedDiscount = 95;
-                                log.push(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
                             } else if (hoursSinceLastSale >= 72) {
                                 calculatedDiscount = 60;
-                                log.push(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
                             } else if (hoursSinceLastSale >= 48) {
                                 calculatedDiscount = 30;
-                                log.push(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
                             } else if (hoursSinceLastSale >= 24) {
                                 calculatedDiscount = 10;
-                                log.push(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
                             } else {
-                                discount = 0;
-                                log.push(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']} because it has not been >= 24 hrs since it was last sold.`);
+                                calculatedDiscount = 0;
                             }
+                            log.push(`A ${calculatedDiscount}% discount has been applied to ${selectedProduct['name']}.`);
                         }
                         // If there has been no sales history for the selected product
                         else {
@@ -479,7 +468,6 @@
                         let index = products[category].findIndex(product => Number(product.item_id) === item_id);
                         if (index !== -1) {
                             products[category][index].price = selectedProduct.price;
-                            break;
                         }
                     }
                 } 
